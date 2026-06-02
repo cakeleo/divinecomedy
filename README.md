@@ -4,6 +4,12 @@
 
 Открыть **dante.html** — без установки, без сервера, просто в браузере.
 
+<p align="center">
+  <img src="screenshots/1.png" width="32%" alt="Текст и примечания">
+  <img src="screenshots/2.png" width="32%" alt="Выбор перевода">
+  <img src="screenshots/3.png" width="32%" alt="Гравюры Доре">
+</p>
+
 ## Что внутри
 
 | Панель | Содержание |
