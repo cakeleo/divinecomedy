@@ -1,82 +1,77 @@
 # Divina Commedia
 
-Three-pane parallel reader for Dante's *Divine Comedy*.  
-Translations, commentary, and Doré engravings — side by side.
+Читалка «Божественной комедии» Данте — три панели: текст, примечания и гравюры Доре.
 
-**[Open dante.html](dante.html)** — no install, no server, just a browser.
+**[Открыть dante.html](dante.html)** — без установки, без сервера, просто в браузере.
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/REPLACE_ME/deploy-status)](https://REPLACE_ME.netlify.app)
+## Что внутри
 
----
+| Панель | Содержание |
+|--------|-----------|
+| **Текст** | Лозинский · Мин · Cary (EN) · итальянский оригинал |
+| **Примечания** | Все комментарии вместе, с цветовой кодировкой по источнику, сортировка по строкам |
+| **Иллюстрации** | 136 гравюр Гюстава Доре |
 
-## What's inside
+Клик на ★ в тексте → примечания прокручиваются к строке.  
+Клик на примечание → текст прокручивается к строке.
 
-| Pane | Content |
-|------|---------|
-| **Text** | Лозинский · Мин · Cary (EN) · Italian original |
-| **Notes** | All commentary combined, color-coded by source, sorted by line |
-| **Illustrations** | 136 Gustave Doré engravings |
-
-Click a ★ in the text → notes scroll to that line.  
-Click a note → text scrolls to that line.
-
-All four translations of all 100 cantos, 2,600+ editorial notes, 136 illustrations.  
-No internet, no server, no dependencies — one HTML file + an images folder.
+Все четыре перевода, все 100 песней, 2600+ редакторских примечаний, 136 иллюстраций.  
+Без интернета, без сервера, без зависимостей — один HTML-файл и папка с картинками.
 
 ---
 
-## Quick start
+## Быстрый старт
 
-### Just read (no install)
+### Просто читать (без установки)
 ```
 open dante.html
 ```
-Works offline in any modern browser. Keep `illustrations/` in the same folder.
+Работает офлайн в любом современном браузере. Папка `illustrations/` должна быть рядом.
 
-### Local server (for development)
+### Локальный сервер (для разработки)
 ```bash
 pip install flask
 python3 server.py
 # → http://localhost:5000
 ```
 
-### Rebuild standalone (after editing the frontend)
+### Пересобрать автономную версию (после правок фронтенда)
 ```bash
 cd source && python3 forge.py
-# → regenerates ../dante.html
+# → обновит ../dante.html
 ```
 
 ---
 
-## Public domain
+## Общественное достояние
 
-All content is free of copyright restrictions:
+Весь контент свободен от авторских прав:
 
-| Work | Author | Year | Status |
-|------|--------|------|--------|
-| *Divina Commedia* | Dante Alighieri | 1321 | Public domain |
-| Russian translation | Михаил Лозинский | d. 1955 | Public domain (2026) |
-| Russian translation (Inferno) | Михаил Мин | — | Public domain |
-| English translation | Henry Francis Cary | d. 1844 | Public domain |
-| Illustrations | Gustave Doré | d. 1883 | Public domain |
+| Произведение | Автор | Год | Статус |
+|-------------|-------|-----|--------|
+| *Divina Commedia* | Данте Алигьери | 1321 | Общественное достояние |
+| Русский перевод | Михаил Лозинский | ум. 1955 | Общественное достояние (2026) |
+| Русский перевод (Ад) | Михаил Мин | — | Общественное достояние |
+| Английский перевод | Henry Francis Cary | ум. 1844 | Общественное достояние |
+| Иллюстрации | Гюстав Доре | ум. 1883 | Общественное достояние |
 
 ---
 
-## Project structure
+## Структура проекта
 
 ```
-├── dante.html          ← standalone reader (open in browser)
-├── illustrations/      ← 136 Doré engravings
-├── server.py           ← Flask API + dev server
+├── dante.html          ← автономная читалка (открыть в браузере)
+├── illustrations/      ← 136 гравюр Доре
+├── server.py           ← Flask API + дев-сервер
 ├── requirements.txt    ← Flask
 └── source/
-    ├── index.html      ← editable SPA frontend
-    ├── forge.py        ← builds ../dante.html
-    └── books.json      ← pre-parsed book data
+    ├── index.html      ← редактируемый SPA-фронтенд
+    ├── forge.py        ← сборщик → ../dante.html
+    └── books.json      ← готовые данные книг
 ```
 
 ---
 
-## License
+## Лицензия
 
-The code is MIT. The content is public domain — do whatever you want with it.
+Код — MIT. Контент — общественное достояние, делайте что хотите.
