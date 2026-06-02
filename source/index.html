@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Божественная комедия — читалка</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%232C3539'/><text x='50' y='68' font-size='52' font-family='Georgia,serif' font-weight='bold' fill='%238FBC8F' text-anchor='middle'>DC</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,700&family=PT+Serif&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --font-base: Georgia, 'Times New Roman', serif;
+  --font-size: 21px;
+  --note-font-size: 17px;
+  --bg: #1A1A1A;
+  --text: #E0E0E0;
+  --body-bg: #222222;
+  --border: #3A3A3A;
+  --border-light: #2E2E2E;
+  --header-bg: #252525;
+  --muted: #666666;
+  --muted2: #777777;
+  --accent: #6B8793;
+  --accent-light: #7DA0AD;
+  --note-text: #C0C0C0;
+  --highlight: rgba(255, 152, 0, 0.16);
+  --hover: rgba(107, 135, 147, 0.08);
+  --note-hover: rgba(107, 135, 147, 0.05);
+  --handle-bg: #2E2E2E;
+  --scrollbar-thumb: #4A4A4A;
+  --input-bg: #2A2A2A;
+  --input-border: #444444;
+  --btn-text: #999999;
+  --toolbar-bg: #141414;
+  --toolbar-text: #B0B0B0;
+  --toolbar-border: #2A2A2A;
+  --toolbar-input-bg: rgba(255,255,255,0.08);
+  --toolbar-input-border: rgba(255,255,255,0.12);
+  --toolbar-sep: rgba(255,255,255,0.08);
+  --marker: #e5c07b;
+}
+body.size-sm  { --font-size: 18px; --note-font-size: 15px; }
+body.size-md  { --font-size: 21px; --note-font-size: 17px; }
+body.size-lg  { --font-size: 23px; --note-font-size: 20px; }
+body.size-xl  { --font-size: 25px; --note-font-size: 22px; }
+
+html, body { height: 100%; font-family: var(--font-base); background: var(--bg); color: var(--text); overflow: hidden; }
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* --- Toolbar --- */
+#toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; background: var(--toolbar-bg); border-bottom: 1px solid var(--toolbar-border);
+  flex-shrink: 0; user-select: none; z-index: 10; font-size: 15px;
+}
+#toolbar select, #toolbar button {
+  background: var(--toolbar-input-bg); color: var(--toolbar-text); border: 1px solid var(--toolbar-input-border);
+  padding: 4px 8px; border-radius: 3px; font-size: 14px; cursor: pointer; font-family: inherit;
+}
+#toolbar select:hover, #toolbar button:hover { border-color: var(--accent-light); }
+#toolbar select { min-width: 150px; }
+#toolbar select.small { min-width: 80px; }
+#toolbar button.add-btn { background: var(--accent); border-color: var(--accent); font-weight: bold; color: #fff; }
+#toolbar .sep { width: 1px; height: 18px; background: var(--toolbar-sep); }
+#toolbar .sync-btn { font-size: 18px; color: var(--accent-light); cursor: pointer; white-space: nowrap; padding: 2px 6px; border-radius: 3px; }
+#toolbar .sync-btn.off { color: var(--toolbar-input-border); opacity: 0.5; }
+#toolbar .nav-btn { font-size: 18px; padding: 2px 8px; line-height: 1; }
+#toolbar .app-title { color: var(--accent-light); font-weight: bold; margin-right: 12px; font-size: 17px; letter-spacing: 1px; }
+#toolbar .icon-btn { font-size: 18px; padding: 2px 6px; background: none; border: 1px solid var(--toolbar-input-border); cursor: pointer; border-radius: 3px; color: var(--toolbar-text); }
+#toolbar .icon-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+#toolbar .icon-btn:hover { border-color: var(--accent-light); }
+
+/* --- Panes --- */
+#panes { display: flex; flex: 1; overflow-y: hidden; }
+
+.pane {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border); overflow: hidden; min-width: 220px;
+  flex: 1;
+}
+.pane:last-child { border-right: none; }
+
+.resize-handle {
+  width: 5px; cursor: col-resize; background: var(--handle-bg); flex-shrink: 0;
+  position: relative;
+}
+.resize-handle::after {
+  content: ''; position: absolute; left: -2px; right: -2px; top: 0; bottom: 0;
+}
+.resize-handle:hover, .resize-handle.active { background: var(--accent-light); }
+
+/* --- Pane header --- */
+.pane-header {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  padding: 4px 6px; background: var(--header-bg); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; min-height: 32px; user-select: none;
+}
+.pane-type-label {
+  font-size: 13px; font-weight: bold; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--accent); white-space: nowrap;
+}
+.pane-book-select {
+  background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border);
+  padding: 2px 4px; border-radius: 3px; font-size: 13px; font-family: inherit; min-width: 100px; flex-shrink: 0;
+}
+.pane-book-select:disabled { opacity: 0.4; }
+
+.notes-filter-select {
+  background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border);
+  padding: 2px 6px; border-radius: 3px; font-size: 13px; font-family: inherit; margin-left: 8px; flex-shrink: 0;
+  min-width: 90px;
+}
+
+/* --- Pane body --- */
+.pane-body {
+  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 24px 20px 16px;
+  scroll-behavior: smooth; background: var(--body-bg); color: var(--text);
+}
+.pane-body::-webkit-scrollbar { width: 8px; }
+.pane-body::-webkit-scrollbar-track { background: transparent; }
+.pane-body::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+/* --- Text lines --- */
+.text-line {
+  display: flex; gap: 12px; padding: 2px 0; line-height: 1.75;
+}
+.text-line .line-num {
+  color: var(--muted); font-size: 13px; min-width: 32px; text-align: right;
+  user-select: none; flex-shrink: 0; padding-top: 3px;
+}
+.text-line .line-text { flex: 1; font-size: var(--font-size); cursor: default; }
+.text-line:hover { background: var(--hover); }
+.text-line:hover .line-num { color: var(--accent); }
+.text-line.highlight { background: var(--highlight); }
+.note-marker {
+  color: var(--marker); font-size: 16px; font-weight: bold; margin-left: 4px;
+  vertical-align: super; line-height: 1; cursor: pointer; user-select: none;
+}
+
+/* --- Bionic reading --- */
+body.bionic .line-text { word-spacing: 0.2em; }
+body.bionic .bionic-bold { font-weight: 700; }
+
+/* --- Notes --- */
+.note-item {
+  padding: 7px 0; border-bottom: 1px solid var(--border-light); line-height: 1.55; font-size: var(--note-font-size);
+}
+.note-item .note-ref { color: var(--accent); font-weight: bold; font-size: 16px; }
+.note-item .note-text { color: var(--note-text); }
+.note-item:hover { background: var(--note-hover); }
+.note-item.highlight { background: var(--highlight); }
+
+/* --- Section header --- */
+.section-header {
+  color: var(--text); font-weight: bold; font-size: 21px;
+  margin: 0 0 14px 0; text-align: center;
+  border-bottom: 1px solid var(--border); padding-bottom: 10px; letter-spacing: 1px;
+}
+.section-subtitle {
+  color: var(--muted2); font-size: 14px; font-weight: normal;
+  display: block; letter-spacing: 0; margin-top: 4px;
+}
+
+/* --- Misc --- */
+.empty-state { color: var(--muted); font-style: italic; padding: 48px; text-align: center; font-size: 18px; }
+.loading { color: var(--muted); text-align: center; padding: 48px; font-size: 18px; }
+
+.illustration { cursor: pointer; transition: opacity 0.15s; }
+.illustration:hover { opacity: 0.85; }
+
+/* --- Image lightbox --- */
+#lightbox {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+  z-index: 2000; flex-direction: column; align-items: center; justify-content: center;
+}
+#lightbox.open { display: flex; }
+#lightbox .lb-close {
+  position: absolute; top: 16px; right: 24px;
+  background: none; border: none; color: #d9d4c8; font-size: 32px;
+  cursor: pointer; z-index: 10; line-height: 1;
+}
+#lightbox .lb-close:hover { color: #fff; }
+#lightbox .lb-zoom-ctrl {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 12px; align-items: center; z-index: 10;
+}
+#lightbox .lb-zoom-ctrl button {
+  background: rgba(255,255,255,0.15); color: #d9d4c8; border: 1px solid rgba(255,255,255,0.2);
+  width: 36px; height: 36px; border-radius: 50%; font-size: 23px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+#lightbox .lb-zoom-ctrl button:hover { background: rgba(255,255,255,0.3); color: #fff; }
+#lightbox .lb-zoom-ctrl .lb-zoom-label {
+  color: #b0a898; font-size: 14px; min-width: 48px; text-align: center;
+}
+#lightbox .lb-img-wrap {
+  max-width: 92vw; max-height: 82vh; overflow: visible;
+  display: flex; align-items: center; justify-content: center;
+}
+#lightbox .lb-img-wrap img {
+  display: block; max-width: 100%; max-height: 82vh;
+  transform-origin: center center; transition: transform 0.08s ease-out;
+  cursor: zoom-in;
+}
+
+/* --- Pane labels --- */
+.pane-label {
+  font-size: 14px; font-weight: bold; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--accent); white-space: nowrap;
+}
+.pane-hint { font-size: 12px; color: var(--muted); margin-left: 6px; }
+
+/* --- Note source headers --- */
+.note-source-header {
+  font-size: 13px; font-weight: bold; color: var(--text);
+  padding: 8px 0 4px 8px; margin: 10px 0 4px 0;
+  border-left: 3px solid var(--accent); display: flex; align-items: center; gap: 6px;
+}
+.note-source-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.note-line-sep {
+  font-size: 13px; color: var(--accent); font-weight: bold;
+  padding: 10px 0 2px 0; margin-top: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+.note-source-tag {
+  font-size: 11px; font-weight: bold; margin-right: 4px; opacity: 0.7;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+@media (max-width: 800px) {
+  #toolbar {
+    flex-wrap: nowrap; gap: 5px; padding: 5px 8px; overflow-x: auto;
+  }
+  #toolbar .app-title { display: none; }
+  #toolbar select { font-size: 15px; min-width: 90px; padding: 5px 6px; }
+  #toolbar .icon-btn, #toolbar .nav-btn, #toolbar .sync-btn {
+    font-size: 22px; padding: 5px 10px; min-width: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #toolbar .add-btn { font-size: 15px; padding: 5px 10px; white-space: nowrap; }
+  #toolbar .sep { margin: 0 2px; }
+
+  #panes {
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  #panes::-webkit-scrollbar { height: 4px; }
+  #panes::-webkit-scrollbar-track { background: transparent; }
+  #panes::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+
+  .pane {
+    flex: 0 0 100% !important;
+    min-width: 100vw !important;
+    scroll-snap-align: start;
+    border-right: 2px solid var(--border);
+  }
+
+  .resize-handle { display: none !important; }
+
+  .pane-body { padding: 12px 14px 12px 10px; }
+
+  .pane-header { padding: 6px 8px; gap: 4px; }
+  .pane-book-select { padding: 5px 6px; font-size: 15px; min-width: 80px; }
+
+  .text-line .line-text { font-size: var(--font-size); }
+}
+
+@media (max-width: 700px) {
+  #toolbar { flex-wrap: wrap; gap: 4px; }
+  #toolbar select { min-width: 120px; }
+  .pane { min-width: 140px; }
+  .text-line .line-text { font-size: 21px; }
+}
+#mobile-pane-nav .mobile-pane-arrow {
+  background: var(--toolbar-input-bg); border: 1px solid var(--toolbar-input-border);
+  color: var(--toolbar-text); border-radius: 50%;
+  width: 32px; height: 32px; font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: inherit; line-height: 1;
+}
+#mobile-pane-nav .mobile-pane-arrow:active { background: var(--accent); }
+#mobile-pane-nav .mobile-pane-dots {
+  display: flex; gap: 10px; align-items: center;
+}
+#mobile-pane-nav .mobile-pane-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--muted); cursor: pointer; transition: background 0.15s;
+}
+#mobile-pane-nav .mobile-pane-dot.active { background: var(--accent-light); }
+
+@media (max-width: 800px) {
+  #toolbar {
+    flex-wrap: nowrap; gap: 5px; padding: 5px 8px; overflow-x: auto;
+  }
+  #toolbar .app-title { display: none; }
+  #toolbar select { font-size: 15px; min-width: 90px; padding: 5px 6px; }
+  #toolbar .icon-btn, #toolbar .nav-btn, #toolbar .sync-btn {
+    font-size: 22px; padding: 5px 10px; min-width: 36px; min-height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #toolbar .add-btn { font-size: 15px; padding: 5px 10px; white-space: nowrap; }
+  #toolbar .sep { margin: 0 2px; }
+
+  #panes {
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  #panes::-webkit-scrollbar { height: 4px; }
+  #panes::-webkit-scrollbar-track { background: transparent; }
+  #panes::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+
+  .pane {
+    flex: 0 0 100% !important;
+    min-width: 100vw !important;
+    scroll-snap-align: start;
+    border-right: 2px solid var(--border);
+  }
+
+  .resize-handle { display: none !important; }
+
+  .pane-body { padding: 12px 14px 12px 10px; }
+
+  .pane-header { padding: 6px 8px; gap: 4px; }
+  .pane-book-select { padding: 5px 6px; font-size: 15px; min-width: 80px; }
+  .notes-filter-select { padding: 5px 6px; font-size: 15px; min-width: 70px; margin-left: 4px; }
+
+  .text-line .line-text { font-size: var(--font-size); }
+
+  #mobile-pane-nav { display: flex; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <span class="app-title">Divina Commedia</span>
+    <button class="nav-btn secondary" id="prev-btn" title="Пред. песнь (Alt+←)">◀</button>
+    <select id="canto-select"></select>
+    <button class="nav-btn secondary" id="next-btn" title="След. песнь (Alt+→)">▶</button>
+    <span class="sep"></span>
+    <span class="sync-btn on" id="sync-btn" title="Синхронная прокрутка">⟳</span>
+    <span class="sep"></span>
+    <button class="icon-btn" id="bionic-btn" title="Bionic reading">Br</button>
+    <select class="small" id="size-select">
+      <option value="sm">A</option>
+      <option value="md" selected>A+</option>
+      <option value="lg">A++</option>
+      <option value="xl">A+++</option>
+    </select>
+    <span class="sep"></span>
+    <button class="icon-btn" id="reset-btn" title="Сбросить настройки">↺</button>
+  </div>
+  <div id="panes"></div>
+</div>
+
+<div id="lightbox">
+  <button class="lb-close" onclick="closeLightbox()">&times;</button>
+  <div class="lb-img-wrap">
+    <img id="lb-img" src="" alt="" draggable="false">
+  </div>
+  <div class="lb-zoom-ctrl">
+    <button onclick="zoomLightbox(-1)" title="Уменьшить">&minus;</button>
+    <span class="lb-zoom-label" id="lb-zoom-label">100%</span>
+    <button onclick="zoomLightbox(1)" title="Увеличить">+</button>
+  </div>
+</div>
+
+<script>
+const S = {
+  books: {},
+  currentGlobalCanto: 1,
+  syncScroll: true,
+  bionic: false,
+  size: 'md',
+  textBook: 'ru_lozinsky',
+  notesFilter: 'all',
+};
+
+const _cantoCache = {};
+
+const PANE_TEXT = 0;
+const PANE_NOTES = 1;
+const PANE_ILLUSTRATIONS = 2;
+
+const NOTE_COLORS = {
+  ru_lozinsky: '#e5c07b',
+  ru_mina: '#7aa2f7',
+};
+
+const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+async function api(path) {
+  const r = await fetch(path);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+function applySettings() {
+  const b = document.body;
+  b.classList.toggle('bionic', S.bionic);
+  b.className = b.className.replace(/size-\S+/g, '');
+  b.classList.add('size-' + S.size);
+
+  if (S.bionic) $('#bionic-btn').classList.add('active');
+  else $('#bionic-btn').classList.remove('active');
+  $('#size-select').value = S.size;
+}
+
+function bionicWord(text) {
+  if (!S.bionic) return esc(text);
+  const words = text.split(/(\s+)/);
+  return words.map(w => {
+    if (/^\s+$/.test(w) || w.length < 3) return w;
+    const half = Math.ceil(w.length / 2);
+    return '<span class="bionic-bold">' + esc(w.slice(0, half)) + '</span>' + esc(w.slice(half));
+  }).join('');
+}
+
+async function init() {
+  try {
+    const savedCanto = localStorage.getItem('currentCanto');
+    if (savedCanto) S.currentGlobalCanto = +savedCanto;
+    S.syncScroll = localStorage.getItem('syncScroll') !== 'off';
+    S.bionic = localStorage.getItem('bionic') === 'on';
+    S.size = localStorage.getItem('size') || 'md';
+    S.textBook = localStorage.getItem('textBook') || 'ru_lozinsky';
+    S.notesFilter = localStorage.getItem('notesFilter') || 'all';
+
+    applySettings();
+
+    S.books = await api('/api/books');
+    const cantos = await api('/api/books/ru_lozinsky/cantos');
+    buildCantoSelect(cantos);
+
+    render();
+    await reloadAll();
+
+    const btn = $('#sync-btn');
+    btn.className = 'sync-btn ' + (S.syncScroll ? 'on' : 'off');
+  } catch(e) {
+    $('#panes').innerHTML = '<div class="empty-state">Ошибка: ' + esc(e.message) + '</div>';
+  }
+}
+
+function buildCantoSelect(cantos) {
+  const sel = $('#canto-select');
+  const names = { Inferno:'Ад', Purgatorio:'Чистилище', Paradiso:'Рай' };
+  let h = '', cs = '';
+  // Separate prefaces from cantos
+  const prefaces = cantos.filter(c => c.section === 'preface');
+  const regular = cantos.filter(c => c.section !== 'preface');
+  // Add prefaces as first optgroup
+  if (prefaces.length > 0) {
+    h += '<optgroup label="── Предисловия ──">';
+    prefaces.forEach(c => {
+      h += '<option value="' + c.global_number + '">' + c.title + '</option>';
+    });
+    h += '</optgroup>';
+  }
+  for (const c of regular) {
+    if (c.section !== cs) {
+      if (cs) h += '</optgroup>';
+      cs = c.section;
+      h += '<optgroup label="── ' + (names[cs] || cs) + ' ──">';
+    }
+    h += '<option value="' + c.global_number + '">Песнь ' + c.number + '</option>';
+  }
+  h += '</optgroup>';
+  sel.innerHTML = h;
+  sel.value = S.currentGlobalCanto;
+  sel.addEventListener('change', () => {
+    setCanto(+sel.value);
+  });
+}
+
+function setCanto(n) {
+  S.currentGlobalCanto = n;
+  localStorage.setItem('currentCanto', n);
+  $('#canto-select').value = n;
+  render();
+  reloadAll();
+}
+
+async function reloadAll() {
+  await loadPane(PANE_NOTES); // Load notes first to populate cache
+  await Promise.all([loadPane(PANE_TEXT), loadPane(PANE_ILLUSTRATIONS)]);
+}
+
+// ============ Pane model ============
+
+// ============ Render (3 fixed panes) ============
+function render() {
+  const isPreface = S.currentGlobalCanto === 0;
+  const panesEl = $('#panes');
+  let h = '';
+
+  // Pane 0: Text
+  h += '<div class="pane" data-pane="0">' +
+    '<div class="pane-header">' +
+      '<span class="pane-label">Текст</span>' +
+      '<select class="pane-book-select" onchange="setTextBook(this.value)">' +
+        (isPreface
+          ? '<option value="ru_lozinsky"' + (S.textBook === 'ru_lozinsky' ? ' selected' : '') + '>Лозинский</option>' +
+            '<option value="ru_mina"' + (S.textBook === 'ru_mina' ? ' selected' : '') + '>Мин</option>'
+          : '<option value="ru_lozinsky"' + (S.textBook === 'ru_lozinsky' ? ' selected' : '') + '>Лозинский</option>' +
+            '<option value="ru_mina"' + (S.textBook === 'ru_mina' ? ' selected' : '') + '>Мин</option>' +
+            '<option value="en_cary"' + (S.textBook === 'en_cary' ? ' selected' : '') + '>Cary (EN)</option>' +
+            '<option value="it_original"' + (S.textBook === 'it_original' ? ' selected' : '') + '>Оригинал (IT)</option>') +
+      '</select>' +
+    '</div>' +
+    '<div class="pane-body" id="pb-0"><div class="loading">…</div></div>' +
+  '</div>\n';
+
+  h += '<div class="resize-handle" data-idx="0"></div>';
+
+  // Pane 1: Notes (all books combined)
+  h += '<div class="pane" data-pane="1">' +
+    '<div class="pane-header">' +
+      '<span class="pane-label">Примечания</span>' +
+      (isPreface ? '' :
+        '<select class="notes-filter-select" onchange="setNotesFilter(this.value)">' +
+          '<option value="all"' + (S.notesFilter === 'all' ? ' selected' : '') + '>Все</option>' +
+          '<option value="ru_lozinsky"' + (S.notesFilter === 'ru_lozinsky' ? ' selected' : '') + '>Лозинский</option>' +
+          '<option value="ru_mina"' + (S.notesFilter === 'ru_mina' ? ' selected' : '') + '>Мин</option>' +
+        '</select>') +
+    '</div>' +
+    '<div class="pane-body" id="pb-1"><div class="loading">…</div></div>' +
+  '</div>\n';
+
+  h += '<div class="resize-handle" data-idx="1"></div>';
+
+  // Pane 2: Illustrations
+  h += '<div class="pane" data-pane="2">' +
+    '<div class="pane-header">' +
+      '<span class="pane-label">Иллюстрации</span>' +
+      '<span class="pane-type-label">Doré</span>' +
+    '</div>' +
+    '<div class="pane-body" id="pb-2"><div class="loading">…</div></div>' +
+  '</div>';
+
+  panesEl.innerHTML = h;
+
+  initResize();
+}
+
+function setTextBook(bookId) {
+  S.textBook = bookId;
+  localStorage.setItem('textBook', bookId);
+  const sel = document.querySelector('.pane[data-pane="0"] .pane-book-select');
+  if (sel) sel.value = bookId;
+  loadPane(PANE_TEXT);
+}
+
+function setNotesFilter(filter) {
+  S.notesFilter = filter;
+  localStorage.setItem('notesFilter', filter);
+  loadPane(PANE_NOTES);
+}
+
+// ============ Load content ============
+async function loadPane(idx) {
+  const body = document.getElementById('pb-' + idx);
+  if (!body) return;
+  const gn = S.currentGlobalCanto;
+
+  try {
+    let html = '';
+    if (idx === PANE_TEXT) {
+      // Text pane: selected book
+      const bookId = S.currentGlobalCanto === 0
+        ? (['ru_lozinsky', 'ru_mina'].includes(S.textBook) ? S.textBook : 'ru_lozinsky')
+        : S.textBook;
+      const d = await api('/api/books/' + bookId + '/canto/' + gn);
+      _cantoCache[bookId + '|' + gn] = d;
+      const allNoted = await getNotedLinesForCurrentCanto();
+      html = renderText(d, allNoted);
+    } else if (idx === PANE_NOTES) {
+      // Notes pane: all books combined
+      if (gn === 0) {
+        html = '<div class="empty-state">Примечания отсутствуют для предисловий</div>';
+      } else {
+        const result = await loadAllNotes(gn);
+        html = renderCombinedNotes(result);
+      }
+    } else if (idx === PANE_ILLUSTRATIONS) {
+      // Illustrations pane: EN Cary
+      const d = await api('/api/books/en_cary/canto/' + gn);
+      _cantoCache['en_cary|' + gn] = d;
+      if (d.images && d.images.length > 0) {
+        html = renderIllustrations(d);
+      } else {
+        html = '<div class="empty-state">Нет иллюстраций</div>';
+      }
+    }
+    body.innerHTML = html;
+  } catch(e) {
+    body.innerHTML = '<div class="empty-state">Ошибка: ' + esc(e.message) + '</div>';
+  }
+
+  const key = 'sc-' + idx + '-' + S.currentGlobalCanto;
+  const s = localStorage.getItem(key);
+  if (s) body.scrollTop = +s;
+
+  if (idx === PANE_TEXT) {
+    body.onscroll = () => {
+      localStorage.setItem(key, body.scrollTop);
+      if (S.syncScroll) syncFromSource(idx, body);
+    };
+  }
+
+  // Click handlers
+  if (idx === PANE_TEXT) {
+    body.querySelectorAll('.text-line').forEach(lineEl => {
+      lineEl.addEventListener('click', () => {
+        const lineNum = parseInt(lineEl.dataset.line);
+        highlightNotesForLine(lineNum);
+      });
+      lineEl.style.cursor = 'pointer';
+    });
+  }
+
+  if (idx === PANE_NOTES) {
+    body.querySelectorAll('.note-item').forEach(noteEl => {
+      noteEl.addEventListener('click', () => {
+        const refs = (noteEl.dataset.lineRefs || '').split(',').map(Number).filter(Boolean);
+        highlightLinesForNote(refs, noteEl);
+      });
+      noteEl.style.cursor = 'pointer';
+    });
+  }
+}
+
+async function getNotedLinesForCurrentCanto() {
+  const gn = S.currentGlobalCanto;
+  // Map: lineNum → Set of bookIds that have notes for that line
+  const result = new Map();
+  const addNotes = (bookId, notes) => {
+    for (const n of notes) {
+      if (n.line_refs && n.line_refs.length > 0) {
+        const lineNum = n.line_refs[n.line_refs.length - 1];
+        if (!result.has(lineNum)) result.set(lineNum, new Set());
+        result.get(lineNum).add(bookId);
+      }
+    }
+  };
+  const fetches = [];
+  for (const bid of Object.keys(S.books)) {
+    if (!S.books[bid].has_notes) continue;
+    const key = bid + '|' + gn;
+    if (_cantoCache[key]) {
+      const d = _cantoCache[key];
+      if (d.notes) addNotes(bid, d.notes);
+    } else {
+      fetches.push(
+        api('/api/books/' + bid + '/canto/' + gn).then(d => {
+          _cantoCache[key] = d;
+          if (d && d.notes) addNotes(bid, d.notes);
+        }).catch(() => {})
+      );
+    }
+  }
+  if (fetches.length > 0) await Promise.allSettled(fetches);
+  return result;
+}
+
+async function loadAllNotes(gn) {
+  // Returns { section, sources: [{ bookId, bookLabel, color, notes[] }] }
+  const sources = [];
+  let section = '';
+  const fetches = [];
+  const noteBooks = Object.keys(S.books).filter(bid => S.books[bid].has_notes);
+
+  for (const bid of noteBooks) {
+    const key = bid + '|' + gn;
+    const process = (d) => {
+      if (!d) return;
+      if (d.section && !section) section = d.section;
+      if (d.notes && d.notes.length > 0) {
+        sources.push({
+          bookId: bid,
+          bookLabel: S.books[bid].translator || S.books[bid].title,
+          color: NOTE_COLORS[bid] || '#999',
+          notes: d.notes
+        });
+      }
+    };
+    if (_cantoCache[key]) {
+      process(_cantoCache[key]);
+    } else {
+      fetches.push(
+        api('/api/books/' + bid + '/canto/' + gn).then(d => {
+          _cantoCache[key] = d;
+          process(d);
+        }).catch(() => {})
+      );
+    }
+  }
+  if (fetches.length > 0) await Promise.allSettled(fetches);
+  sources.sort((a, b) => a.bookId.localeCompare(b.bookId));
+  return { section, sources };
+}
+
+function renderText(data, allNotedLines) {
+  if (!data.lines || !data.lines.length) return '<div class="empty-state">Нет текста</div>';
+  const names = { Inferno:'Ад', Purgatorio:'Чистилище', Paradiso:'Рай', preface:'Предисловие' };
+
+  const isPreface = data.section === 'preface';
+  let h = '<div class="section-header">' +
+    (isPreface ? data.title : (names[data.section] || data.section) + ' &mdash; Песнь ' + data.number) +
+    '<span class="section-subtitle">' + data.lines.length + ' строк</span>' +
+    '</div>';
+  h += data.lines.map(l => {
+    let markers = '';
+    if (allNotedLines && allNotedLines.has(l.n)) {
+      const bookIds = allNotedLines.get(l.n);
+      const sorted = [...bookIds].sort();
+      for (const bid of sorted) {
+        const color = NOTE_COLORS[bid] || '#999';
+        markers += '<span class="note-marker" style="color:' + color + '">*</span>';
+      }
+    }
+    return '<div class="text-line" data-line="' + l.n + '">' +
+      '<span class="line-num">' + l.n + '</span>' +
+      '<span class="line-text">' + bionicWord(l.text) + markers + '</span>' +
+      '</div>';
+  }).join('');
+  return h;
+}
+
+function renderCombinedNotes(result) {
+  const { section, sources } = result;
+  const filtered = S.notesFilter === 'all'
+    ? sources
+    : sources.filter(s => s.bookId === S.notesFilter);
+  if (!filtered || filtered.length === 0) return '<div class="empty-state">Нет примечаний</div>';
+
+  // Flatten all notes with source info, sort by line number
+  const flat = [];
+  filtered.forEach(src => {
+    src.notes.forEach(n => {
+      const lineNum = (n.line_refs && n.line_refs.length > 0) ? n.line_refs[n.line_refs.length - 1] : 0;
+      flat.push({ ...n, _bookId: src.bookId, _color: src.color, _label: src.bookLabel, _line: lineNum });
+    });
+  });
+  flat.sort((a, b) => a._line - b._line || a._bookId.localeCompare(b._bookId));
+
+  const totalCount = flat.length;
+  const names = { Inferno:'Ад', Purgatorio:'Чистилище', Paradiso:'Рай' };
+
+  let h = '<div class="section-header">' +
+    (names[section] || section) + ' &mdash; Примечания' +
+    '<span class="section-subtitle">' + totalCount + ' прим. (' + filtered.length + ' источника)</span>' +
+    '</div>';
+
+  let prevLine = -1;
+  flat.forEach(n => {
+    if (n._line !== prevLine && n._line > 0) {
+      h += '<div class="note-line-sep" data-line="' + n._line + '">Строка ' + n._line + '</div>';
+      prevLine = n._line;
+    }
+    const ref = n.ref ? '<span class="note-ref" style="color:' + n._color + '">' + n.ref + '.</span> ' : '';
+    const lineRefs = (n.line_refs || []).join(',');
+    h += '<div class="note-item" data-book="' + n._bookId + '" data-ref="' + n.ref + '" data-line-refs="' + lineRefs + '">' +
+      '<span class="note-source-tag" style="color:' + n._color + '">' + esc(n._label) + '</span>' +
+      ref + '<span class="note-text">' + esc(n.text) + '</span>' +
+      '</div>';
+  });
+
+  return h;
+}
+
+function renderIllustrations(data) {
+  const names = { Inferno:'Hell', Purgatorio:'Purgatory', Paradiso:'Paradise' };
+  let h = '<div class="section-header">' +
+    (names[data.section] || data.section) + ' &mdash; Canto ' + data.number + ' &mdash; Doré' +
+    '<span class="section-subtitle">' + data.images.length + ' иллюстраций</span>' +
+    '</div>';
+  h += data.images.map(src =>
+    '<div class="illustration"><img src="' + src + '" alt="" loading="lazy" style="max-width:100%;height:auto;display:block;margin:12px auto;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.1)"></div>'
+  ).join('');
+  return h;
+}
+
+// ============ Note highlighting ============
+async function highlightNotesForLine(lineNum) {
+  document.querySelectorAll('.note-item.highlight, .text-line.highlight').forEach(el => el.classList.remove('highlight'));
+
+  // Highlight all text lines with this line number
+  document.querySelectorAll('.text-line[data-line="' + lineNum + '"]').forEach(el => el.classList.add('highlight'));
+
+  // Highlight matching notes in the notes pane (pane 1)
+  const notesBody = document.getElementById('pb-1');
+  if (!notesBody) return;
+
+  let firstMatch = null;
+  notesBody.querySelectorAll('.note-item').forEach(noteEl => {
+    const refs = (noteEl.dataset.lineRefs || '').split(',').map(Number).filter(Boolean);
+    if (refs.includes(lineNum)) {
+      noteEl.classList.add('highlight');
+      if (!firstMatch) firstMatch = noteEl;
+    }
+  });
+
+  if (firstMatch) {
+    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function highlightLinesForNote(lineRefs, clickedNote) {
+  document.querySelectorAll('.note-item.highlight, .text-line.highlight').forEach(el => el.classList.remove('highlight'));
+
+  if (clickedNote) clickedNote.classList.add('highlight');
+
+  // Highlight matching text lines in text pane (pane 0)
+  const textBody = document.getElementById('pb-0');
+  if (!textBody) return;
+
+  let firstLine = null;
+  lineRefs.forEach(lineNum => {
+    textBody.querySelectorAll('.text-line[data-line="' + lineNum + '"]').forEach(lineEl => {
+      lineEl.classList.add('highlight');
+      if (!firstLine) firstLine = lineEl;
+    });
+  });
+
+  if (firstLine) {
+    firstLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// ============ Scroll sync (from text pane) ============
+let syncTimer = null;
+let isSyncing = false;
+
+function syncFromSource(srcIdx, srcBody) {
+  if (isSyncing) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    const maxScroll = srcBody.scrollHeight - srcBody.clientHeight;
+    if (maxScroll <= 0) return;
+    const ratio = maxScroll > 0 ? srcBody.scrollTop / maxScroll : 0;
+
+    isSyncing = true;
+    isSyncing = false;
+  }, 150);
+}
+
+// ============ Resize ============
+function initResize() {
+  $$('.resize-handle').forEach(h => {
+    let sx, sw;
+    h.onmousedown = e => {
+      e.preventDefault();
+      sx = e.clientX;
+      h.classList.add('active');
+      const panes = $$('.pane');
+      sw = Array.from(panes).map(p => p.getBoundingClientRect().width);
+
+      const onMove = ev => {
+        const dx = ev.clientX - sx;
+        const idx = +h.dataset.idx;
+        const panesEls = $$('.pane');
+        const tw = $('#panes').getBoundingClientRect().width;
+        const hc = $$('.resize-handle').length;
+        const aw = tw - hc * 5;
+
+        let nl = sw[idx] + dx;
+        let nr = sw[idx + 1] - dx;
+        if (nl < 140) nl = 140;
+        if (nr < 140) nr = 140;
+
+        const lp = (nl / aw) * 100;
+        const rp = (nr / aw) * 100;
+        panesEls[idx].style.flex = '0 0 ' + lp + '%';
+        panesEls[idx + 1].style.flex = '0 0 ' + rp + '%';
+      };
+
+      const onUp = () => {
+        h.classList.remove('active');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+  });
+}
+
+// ============ Image lightbox ============
+const LIGHTBOX = { zoom: 1, minZoom: 0.2, maxZoom: 5, zoomStep: 0.3,
+  panX: 0, panY: 0, dragging: false, dragStartX: 0, dragStartY: 0, startPanX: 0, startPanY: 0,
+  src: '' };
+
+function applyLightboxTransform() {
+  const img = $('#lb-img');
+  if (!img) return;
+  img.style.transform = 'translate(' + LIGHTBOX.panX + 'px, ' + LIGHTBOX.panY + 'px) scale(' + LIGHTBOX.zoom + ')';
+  $('#lb-zoom-label').textContent = Math.round(LIGHTBOX.zoom * 100) + '%';
+}
+
+function openLightbox(src) {
+  LIGHTBOX.zoom = 1;
+  LIGHTBOX.panX = 0; LIGHTBOX.panY = 0;
+  LIGHTBOX.dragging = false;
+  LIGHTBOX.src = src;
+  const lb = $('#lightbox');
+  const img = $('#lb-img');
+  img.src = src;
+  applyLightboxTransform();
+  lb.classList.add('open');
+
+  img.onwheel = e => {
+    e.preventDefault();
+    const delta = -Math.sign(e.deltaY) * LIGHTBOX.zoomStep;
+    zoomLightbox(delta > 0 ? 1 : -1);
+  };
+
+  img.onmousedown = e => {
+    if (LIGHTBOX.zoom <= 1) return;
+    e.preventDefault();
+    LIGHTBOX.dragging = true;
+    LIGHTBOX.dragStartX = e.clientX;
+    LIGHTBOX.dragStartY = e.clientY;
+    LIGHTBOX.startPanX = LIGHTBOX.panX;
+    LIGHTBOX.startPanY = LIGHTBOX.panY;
+    img.style.cursor = 'grabbing';
+  };
+}
+
+function closeLightbox() {
+  $('#lightbox').classList.remove('open');
+  $('#lb-img').src = '';
+  LIGHTBOX.zoom = 1;
+  LIGHTBOX.panX = 0; LIGHTBOX.panY = 0;
+}
+
+function zoomLightbox(dir) {
+  const step = dir * LIGHTBOX.zoomStep;
+  let newZoom = LIGHTBOX.zoom + step;
+  if (newZoom > LIGHTBOX.maxZoom) newZoom = LIGHTBOX.maxZoom;
+  if (newZoom < LIGHTBOX.minZoom) newZoom = LIGHTBOX.minZoom;
+  LIGHTBOX.zoom = newZoom;
+  if (newZoom <= 1) { LIGHTBOX.panX = 0; LIGHTBOX.panY = 0; }
+  applyLightboxTransform();
+}
+
+document.addEventListener('mousemove', e => {
+  if (!LIGHTBOX.dragging) return;
+  LIGHTBOX.panX = LIGHTBOX.startPanX + (e.clientX - LIGHTBOX.dragStartX);
+  LIGHTBOX.panY = LIGHTBOX.startPanY + (e.clientY - LIGHTBOX.dragStartY);
+  applyLightboxTransform();
+});
+
+document.addEventListener('mouseup', () => {
+  if (LIGHTBOX.dragging) {
+    LIGHTBOX.dragging = false;
+    const img = $('#lb-img');
+    if (img) img.style.cursor = LIGHTBOX.zoom > 1 ? 'grab' : 'zoom-in';
+  }
+});
+
+$('#lightbox').addEventListener('click', e => {
+  if (e.target === $('#lightbox')) closeLightbox();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('#lightbox').classList.contains('open')) closeLightbox();
+});
+
+document.addEventListener('click', e => {
+  const img = e.target.closest('.illustration img');
+  if (!img) return;
+  openLightbox(img.src);
+});
+
+// ============ Settings ============
+$('#bionic-btn').addEventListener('click', () => {
+  S.bionic = !S.bionic;
+  localStorage.setItem('bionic', S.bionic ? 'on' : 'off');
+  applySettings();
+  reloadAll(); // re-render text with bionic
+});
+
+$('#size-select').addEventListener('change', function() {
+  S.size = this.value;
+  localStorage.setItem('size', S.size);
+  applySettings();
+});
+
+// ============ Sync toggle ============
+$('#sync-btn').addEventListener('click', function() {
+  S.syncScroll = !S.syncScroll;
+  localStorage.setItem('syncScroll', S.syncScroll ? 'on' : 'off');
+  this.className = 'sync-btn ' + (S.syncScroll ? 'on' : 'off');
+});
+
+// ============ Navigation ============
+$('#prev-btn').addEventListener('click', () => {
+  if (S.currentGlobalCanto > 0) setCanto(S.currentGlobalCanto - 1);
+});
+$('#next-btn').addEventListener('click', () => {
+  if (S.currentGlobalCanto < 100) setCanto(S.currentGlobalCanto + 1);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.altKey) {
+    if (e.key === 'ArrowLeft' && S.currentGlobalCanto > 0) {
+      setCanto(S.currentGlobalCanto - 1);
+    } else if (e.key === 'ArrowRight' && S.currentGlobalCanto < 100) {
+      setCanto(S.currentGlobalCanto + 1);
+    }
+  }
+});
+
+$('#reset-btn').addEventListener('click', () => {
+  localStorage.clear();
+  location.reload();
+});
+
+init();
+</script>
+</body>
+</html>
