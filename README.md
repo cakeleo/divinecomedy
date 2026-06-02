@@ -49,9 +49,7 @@ cd source && python3 forge.py
 # → обновит ../dante.html
 ```
 
-<p align="center">
-  <img src="screenshots/2.png" width="32%" alt="Выбор перевода">
-</p>
+
 ---
 
 ## Общественное достояние
@@ -81,9 +79,7 @@ cd source && python3 forge.py
     └── books.json      ← готовые данные книг
 ```
 
-<p align="center">
-  <img src="screenshots/3.png" width="32%" alt="Гравюры Доре">
-</p>
+
 
 ---
 
